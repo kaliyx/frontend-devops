@@ -46,7 +46,7 @@ jobs:
           --query "serviceArns[?contains(@, '$ECS_SERVICE_MATCH')]|[0]" \
           --output text)
 
-        if [ -z "$service_arn" ] || [ "$service_arn" = "None" ]; then
+        if [ -z "$service_arn" ]; then
           echo "No ECS service containing '$ECS_SERVICE_MATCH' found in cluster $ECS_CLUSTER_NAME" >&2
           exit 1
         fi
