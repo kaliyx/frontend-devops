@@ -38,7 +38,17 @@ jobs:
 
     - name: Deploy ECS
       run: |
+        service_arn=$(aws ecs list-services \
+          --cluster devops-clusters \
+          --query "serviceArns[?contains(@, 'frontend')]|[0]" \
+          --output text)
+
+        if [ "$service_arn" = "None" ]; then
+          echo "No ECS service containing 'frontend' found in cluster devops-clusters" >&2
+          exit 1
+        fi
+
         aws ecs update-service \
           --cluster devops-clusters \
-          --service frontend-service \
+          --service "$service_arn" \
           --force-new-deployment
