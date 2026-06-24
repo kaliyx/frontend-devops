@@ -8,6 +8,9 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    env:
+      ECS_CLUSTER_NAME: devops-clusters
+      ECS_SERVICE_MATCH: frontend
 
     steps:
     - uses: actions/checkout@v4
@@ -38,7 +41,18 @@ jobs:
 
     - name: Deploy ECS
       run: |
+        query="serviceArns[?contains(@, '$ECS_SERVICE_MATCH')]|[0]"
+        service_arn=$(aws ecs list-services \
+          --cluster "$ECS_CLUSTER_NAME" \
+          --query "$query" \
+          --output text)
+
+        if [ -z "$service_arn" ] || [ "$service_arn" = "None" ]; then
+          echo "No ECS service containing '$ECS_SERVICE_MATCH' found in cluster $ECS_CLUSTER_NAME. Verify ECS_SERVICE_MATCH and ECS_CLUSTER_NAME." >&2
+          exit 1
+        fi
+
         aws ecs update-service \
-          --cluster devops-clusters \
-          --service frontend-service \
+          --cluster "$ECS_CLUSTER_NAME" \
+          --service "$service_arn" \
           --force-new-deployment
